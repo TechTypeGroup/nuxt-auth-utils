@@ -2,8 +2,8 @@ import type { H3Event } from 'h3'
 import { getRequestURL } from 'h3'
 import { FetchError } from 'ofetch'
 import { snakeCase, upperFirst } from 'scule'
-import type { OAuthProvider, OnError } from '#auth-utils'
 import { createError } from '#imports'
+import type { OAuthProvider, OnError } from '#auth-utils'
 
 export function getOAuthRedirectURL(event: H3Event): string {
   const requestURL = getRequestURL(event)
