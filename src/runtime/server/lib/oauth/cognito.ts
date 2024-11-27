@@ -1,11 +1,11 @@
+import type { OAuthConfig } from '#auth-utils'
+import { useRuntimeConfig } from '#imports'
 import { defu } from 'defu'
 import type { H3Event } from 'h3'
 import { eventHandler, getQuery, sendRedirect } from 'h3'
 import { discovery } from 'openid-client'
 import { withQuery } from 'ufo'
 import { getOAuthRedirectURL, handleAccessTokenErrorResponse, handleMissingConfiguration, requestAccessToken } from '../utils'
-import { useRuntimeConfig } from '#imports'
-import type { OAuthConfig } from '#auth-utils'
 
 export interface OAuthCognitoConfig {
   /**
@@ -55,16 +55,43 @@ export function defineOAuthCognitoEventHandler({ config, onSuccess, onError }: O
       return handleMissingConfiguration(event, 'cognito', ['clientId', 'clientSecret', 'userPoolId', 'region'], onError)
     }
     const congitoDiscoveryUrl = new URL(`https://cognito-idp.${config.region}.amazonaws.com/${config.userPoolId}/.well-known/openid-configuration`)
-    const issuer = await discovery(congitoDiscoveryUrl, config.clientId)
+    const issuer = await discovery(congitoDiscoveryUrl, config.clientId, config.clientSecret)
     const {
       authorization_endpoint: authorizationURL,
       token_endpoint: tokenURL,
       userinfo_endpoint: userinfoURL,
+      end_session_endpoint: logoutURL,
     } = issuer.serverMetadata()
+    const endpointBaseUrl = (authorizationURL as string).split('/oauth2')[0]
 
-    const query = getQuery<{ code?: string }>(event)
+    const query = getQuery<{ code?: string, register?: true, logout?: true }>(event)
     const redirectURL = config.redirectURL || getOAuthRedirectURL(event)
-
+    if (!query.code && query.register) {
+      config.scope = config.scope || ['openid', 'profile']
+      // Redirect to Cognito signup page
+      return sendRedirect(
+        event,
+        withQuery(`${endpointBaseUrl}/signup`, {
+          client_id: config.clientId,
+          redirect_uri: redirectURL,
+          response_type: 'code',
+          scope: config.scope.join(' '),
+          ...config.authorizationParams,
+        }),
+      )
+    }
+    if (!query.code && query.logout) {
+      config.scope = config.scope || ['openid', 'profile']
+      // Redirect to Cognito logout page
+      return sendRedirect(
+        event,
+        withQuery(logoutURL as string, {
+          client_id: config.clientId,
+          logout_uri: `${config.redirectURL}/logout/callback`,
+          // ...config.authorizationParams
+        }),
+      )
+    }
     if (!query.code) {
       config.scope = config.scope || ['openid', 'profile']
       // Redirect to Cognito login page
@@ -99,10 +126,9 @@ export function defineOAuthCognitoEventHandler({ config, onSuccess, onError }: O
 
     const tokenType = tokens.token_type
     const accessToken = tokens.access_token
-    const endpointUrl = userinfoURL as string
     // TODO: improve typing
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const user: any = await $fetch(endpointUrl, {
+    const user: any = await $fetch(userinfoURL as string, {
       headers: {
         Authorization: `${tokenType} ${accessToken}`,
       },
