@@ -1,6 +1,22 @@
 # Changelog
 
 
+## v0.6.1
+
+[compare changes](https://github.com/TechTypeGroup/nuxt-auth-utils/compare/v0.6.0...v0.6.1)
+
+### 🚀 Enhancements
+
+- **cognito:** Enhance OAuth flow with signup and logout redirection ([b47ca94](https://github.com/TechTypeGroup/nuxt-auth-utils/commit/b47ca94))
+
+### 🩹 Fixes
+
+- Enable ESLint formatting and reorder imports in Cognito OAuth module ([22189a8](https://github.com/TechTypeGroup/nuxt-auth-utils/commit/22189a8))
+
+### ❤️ Contributors
+
+- Gage K <6761186+kilakewe@users.noreply.github.com>
+
 ## v0.6.0
 
 
