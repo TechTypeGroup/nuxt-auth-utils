@@ -1,6 +1,19 @@
 # Changelog
 
 
+## v0.6.2
+
+[compare changes](https://github.com/TechTypeGroup/nuxt-auth-utils/compare/v0.6.1...v0.6.2)
+
+### 🩹 Fixes
+
+- Reorder imports and update logout URI in Cognito OAuth module ([768c07d](https://github.com/TechTypeGroup/nuxt-auth-utils/commit/768c07d))
+- Reorder imports in Cognito OAuth and utils modules ([912b5a8](https://github.com/TechTypeGroup/nuxt-auth-utils/commit/912b5a8))
+
+### ❤️ Contributors
+
+- Gage K ([@kilakewe](http://github.com/kilakewe))
+
 ## v0.6.1
 
 [compare changes](https://github.com/TechTypeGroup/nuxt-auth-utils/compare/v0.6.0...v0.6.1)
