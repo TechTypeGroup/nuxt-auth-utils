@@ -65,9 +65,38 @@ export function defineOAuthCognitoEventHandler({ config, onSuccess, onError }: O
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       end_session_endpoint: logoutURL,
     } = issuer.serverMetadata()
-    const query = getQuery<{ code?: string }>(event)
+    const query = getQuery<{ code?: string, register?: true, logout?: true }>(event)
     const redirectURL = config.redirectURL || getOAuthRedirectURL(event)
 
+    if (!query.code && query.register) {
+      const endpointBaseUrl = (authorizationURL as string).split('/oauth2')[0]
+      config.scope = config.scope || ['openid', 'profile']
+      // Redirect to Cognito signup page
+      return sendRedirect(
+        event,
+        withQuery(`${endpointBaseUrl}/signup`, {
+          client_id: config.clientId,
+          redirect_uri: redirectURL,
+          response_type: 'code',
+          scope: config.scope.join(' '),
+          ...config.authorizationParams,
+        }),
+      )
+    }
+    if (!query.code && query.logout) {
+      const logoutCallbackUrl = useRuntimeConfig(event)?.site?.url
+      if (!logoutCallbackUrl) throw new Error('Missing site.url in runtime config')
+      config.scope = config.scope || ['openid', 'profile']
+      // Redirect to Cognito logout page
+      return sendRedirect(
+        event,
+        withQuery(logoutURL as string, {
+          client_id: config.clientId,
+          logout_uri: `${useRuntimeConfig(event)?.site?.url}/auth/logout/callback`,
+          // ...config.authorizationParams
+        }),
+      )
+    }
     if (!query.code) {
       config.scope = config.scope || ['openid', 'profile']
       // Redirect to Cognito login page
@@ -102,7 +131,7 @@ export function defineOAuthCognitoEventHandler({ config, onSuccess, onError }: O
 
     const tokenType = tokens.token_type
     const accessToken = tokens.access_token
-    // TODO: improve typing of user profile
+    // TODO: improve typing
     const user: unknown = await $fetch(userinfoURL as string, {
       headers: {
         Authorization: `${tokenType} ${accessToken}`,
